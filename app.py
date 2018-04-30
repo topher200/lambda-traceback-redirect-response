@@ -1,6 +1,16 @@
-from chalice import Chalice, Response
+"""
+    Redirect any requests for a traceback to its Kibana page.
 
-app = Chalice(app_name='lambda-traceback-redirect-response')
+    Why are we using this level of indirection instead of just making links straight to Kibana?
+    Answer: Kibana's github explicitly says that they reserve the abilitiy to change their URL
+    scheme in the future. If they ever do (or if we build our own tracebacks viewer), we want any
+    links that we've made in Jira to continue working.
+
+    So all external links to tracebacks (ie: jira) will point to this server, and this server will
+    stay updated with the URL of Kibana or FutureViewerX.
+"""
+
+from chalice import Chalice, Response
 
 
 KIBANA_ADDRESS = 'https://stats-from-logs.wordstream-sandbox.com'
@@ -19,7 +29,12 @@ ARCHIVE_TEMPLATE = (
 """
 
 
-@app.route('/traceback/{papertrail_id}', content_types=['text/plain'])
+app = Chalice(app_name='lambda-traceback-redirect-response')
+app.debug = True
+
+
+# if anyone requests a traceback, send a redirect
+@app.route('/traceback/{papertrail_id}')
 def traceback(papertrail_id):
     url = ARCHIVE_TEMPLATE.format(
         kibana_address=KIBANA_ADDRESS,
@@ -30,3 +45,9 @@ def traceback(papertrail_id):
         body='',
         headers={'Location': url}
     )
+
+
+# just for debugging
+@app.route('/')
+def index():
+    return {'hello': 'world'}
