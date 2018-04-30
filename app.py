@@ -16,9 +16,9 @@ from chalice import Chalice, Response
 KIBANA_ADDRESS = 'https://stats-from-logs.wordstream-sandbox.com'
 
 ARCHIVE_TEMPLATE = (
-    "{kibana_address}/_plugin/kibana/app/kibana#/discover?"
-    "_g=(time:(from:now-6m))&"
-    "_a=(query:(language:lucene,query:{papertrail_id}))"
+    "{kibana_address/_plugin/kibana/app/kibana#",
+    "/doc/c9685a80-12b5-11e8-bd6d-e15cb8d01613/",
+    "traceback-index/traceback?id={papertrail_id}"
 )
 """
     A template for linking to a papertrail object archive.
