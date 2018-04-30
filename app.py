@@ -34,7 +34,7 @@ ARCHIVE_LINK_TEMPLATE = (
     - the papertrail id to highlight on. example: '926890000000000000'
 """
 
-PAPERTRAIL_LINK_TEMPLATE = 'https://papertrailapp.com/events?focus={papertrail_id}'
+PAPERTRAIL_LINK_TEMPLATE = 'https://papertrailapp.com/systems/{instance_id}/events?focus={papertrail_id}'
 """
     A template for linking directly to papertrail
 
