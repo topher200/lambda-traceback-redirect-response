@@ -72,7 +72,9 @@ def traceback(papertrail_id):
 
 
 def __get_date_of_traceback(papertrail_id):
-    res = requests.get(GET_TRACEBACK_FROM_ES_TEMPALTE.format(ES_ADDRESS, papertrail_id))
+    res = requests.get(GET_TRACEBACK_FROM_ES_TEMPALTE.format(
+        es_address=ES_ADDRESS, papertrail_id=papertrail_id
+    ))
     try:
         traceback_dict = res.json()
     except Exception:
