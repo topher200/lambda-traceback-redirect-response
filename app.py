@@ -17,8 +17,8 @@ KIBANA_ADDRESS = 'https://stats-from-logs.wordstream-sandbox.com'
 
 ARCHIVE_TEMPLATE = (
     "{kibana_address}/_plugin/kibana/app/kibana#/discover?"
-    "_g=(time:(from:now-50y))&"
-    "_a=(query:(language:lucene,query:'{papertrail_id}'))]"
+    "_g=(time:(from:now-6m))&"
+    "_a=(query:(language:lucene,query:{papertrail_id}))]"
 )
 """
     A template for linking to a papertrail object archive.
