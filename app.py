@@ -40,6 +40,7 @@ PAPERTRAIL_LINK_TEMPLATE = 'https://papertrailapp.com/events?focus={papertrail_i
 
     Caller must provide:
     - the papertrail id to highlight on. example: '926890000000000000'
+    - the instance id of the log message. example: 'i-XXXXXXXXXX'
 """
 
 
@@ -50,18 +51,19 @@ app.debug = True
 # if anyone requests a traceback, send a redirect
 @app.route('/traceback/{papertrail_id}')
 def traceback(papertrail_id):
-    date_ = __get_date_of_traceback(papertrail_id)
+    date_, instance_id = __get_traceback_metadata(papertrail_id)
     thirty_days_ago = datetime.date.today() - datetime.timedelta(days=30)
     if date_ < thirty_days_ago:
         print('date %s too old for papertrail' % date_)
         url = ARCHIVE_LINK_TEMPLATE.format(
             kibana_address=ES_ADDRESS,
-            papertrail_id=papertrail_id
+            papertrail_id=papertrail_id,
         )
     else:
         print('date %s is young enough for papertrail' % date_)
         url = PAPERTRAIL_LINK_TEMPLATE.format(
-            papertrail_id=papertrail_id
+            papertrail_id=papertrail_id,
+            instance_id=instance_id,
         )
 
     return Response(
@@ -71,7 +73,15 @@ def traceback(papertrail_id):
     )
 
 
-def __get_date_of_traceback(papertrail_id):
+def __get_traceback_metadata(papertrail_id):
+    """
+        asks Elasticsearch for metadata around the given traceback.
+
+        Returns a two-tuple of the following data:
+        - date of the traceback
+        - instance id of the server who created the traceback
+    """
+    # get traceback from elasticsearch
     res = requests.get(GET_TRACEBACK_FROM_ES_TEMPALTE.format(
         es_address=ES_ADDRESS, papertrail_id=papertrail_id
     ))
@@ -81,6 +91,7 @@ def __get_date_of_traceback(papertrail_id):
         print('failed to parse ES response')
         raise
 
+    # get timestamp string
     try:
         datetime_str = traceback_dict['_source']['origin_timestamp']
     except Exception:
@@ -92,10 +103,20 @@ def __get_date_of_traceback(papertrail_id):
     # 2018-04-24T06:08:59-0400 -> datetime.datetime(2018, 4, 24, 0, 0)
     try:
         date_str = datetime_str.split('T')[0]
-        return datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+        date_ = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
     except Exception:
         print('failed to parse date from timestamp. ts: %s' % datetime_str)
         raise
+
+    # get instance id
+    try:
+        instance_id = traceback_dict['_source']['instance_id']
+    except Exception:
+        print('failed to get instance_id from response')
+        print('json: "%s"' % traceback_dict)
+        raise
+
+    return (date_, instance_id)
 
 
 # just for debugging
