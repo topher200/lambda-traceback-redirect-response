@@ -10,12 +10,18 @@
     stay updated with the URL of Kibana or FutureViewerX.
 """
 
+import datetime
+
+import requests
+
 from chalice import Chalice, Response
 
 
-KIBANA_ADDRESS = 'https://stats-from-logs.wordstream-sandbox.com'
+ES_ADDRESS = 'https://stats-from-logs.wordstream-sandbox.com'
 
-ARCHIVE_TEMPLATE = (
+GET_TRACEBACK_FROM_ES_TEMPALTE = '{es_address}/traceback-index/traceback/{papertrail_id}'
+
+ARCHIVE_LINK_TEMPLATE = (
     "{kibana_address}/_plugin/kibana/app/kibana#"
     "/doc/c9685a80-12b5-11e8-bd6d-e15cb8d01613/"
     "traceback-index/traceback?id={papertrail_id}"
@@ -28,6 +34,14 @@ ARCHIVE_TEMPLATE = (
     - the papertrail id to highlight on. example: '926890000000000000'
 """
 
+PAPERTRAIL_LINK_TEMPLATE = 'https://papertrailapp.com/events?focus={papertrail_id}'
+"""
+    A template for linking directly to papertrail
+
+    Caller must provide:
+    - the papertrail id to highlight on. example: '926890000000000000'
+"""
+
 
 app = Chalice(app_name='lambda-traceback-redirect-response')
 app.debug = True
@@ -36,15 +50,50 @@ app.debug = True
 # if anyone requests a traceback, send a redirect
 @app.route('/traceback/{papertrail_id}')
 def traceback(papertrail_id):
-    url = ARCHIVE_TEMPLATE.format(
-        kibana_address=KIBANA_ADDRESS,
-        papertrail_id=papertrail_id
-    )
+    date_ = __get_date_of_traceback(papertrail_id)
+    thirty_days_ago = datetime.date.today() - datetime.timedelta(days=30)
+    if date_ < thirty_days_ago:
+        print('date %s too old for papertrail' % date_)
+        url = ARCHIVE_LINK_TEMPLATE.format(
+            kibana_address=ES_ADDRESS,
+            papertrail_id=papertrail_id
+        )
+    else:
+        print('date %s is young enough for papertrail' % date_)
+        url = PAPERTRAIL_LINK_TEMPLATE.format(
+            papertrail_id=papertrail_id
+        )
+
     return Response(
         status_code=302,
         body='',
         headers={'Location': url}
     )
+
+
+def __get_date_of_traceback(papertrail_id):
+    res = requests.get(GET_TRACEBACK_FROM_ES_TEMPALTE.format(ES_ADDRESS, papertrail_id))
+    try:
+        traceback_dict = res.json()
+    except Exception:
+        print('failed to parse ES response')
+        raise
+
+    try:
+        datetime_str = traceback_dict['_source']['origin_timestamp']
+    except Exception:
+        print('failed to get origin_timestamp from response')
+        print('json: "%s"' % traceback_dict)
+        raise
+
+    # parse datetime string into python date
+    # 2018-04-24T06:08:59-0400 -> datetime.datetime(2018, 4, 24, 0, 0)
+    try:
+        date_str = datetime_str.split('T')[0]
+        return datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+    except Exception:
+        print('failed to parse date from timestamp. ts: %s' % datetime_str)
+        raise
 
 
 # just for debugging
