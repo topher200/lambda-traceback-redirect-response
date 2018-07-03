@@ -58,9 +58,9 @@ def traceback(papertrail_id):
         date_, instance_id = __get_traceback_metadata(papertrail_id)
     except Exception:
         print('failed to get data from elasticsearch, just sending to papertrail')
-        url = ARCHIVE_LINK_TEMPLATE.format(
-            kibana_address=ES_ADDRESS,
+        url = PAPERTRAIL_LINK_TEMPLATE.format(
             papertrail_id=papertrail_id,
+            instance_id=instance_id,
         )
     else:
         thirty_days_ago = datetime.date.today() - datetime.timedelta(days=30)
