@@ -1,9 +1,9 @@
 .PHONY: deploy
-deploy: dependencies
+deploy: dev-dependencies
 	chalice deploy --profile sandbox
 
-.PHONY: dependencies
-dependencies:
+.PHONY: dev-dependencies
+dev-dependencies:
 	pip install -r requirements.txt
 
 .PHONY: test
