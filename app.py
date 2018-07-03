@@ -45,6 +45,16 @@ PAPERTRAIL_LINK_TEMPLATE = (
     - the instance id of the log message. example: 'i-XXXXXXXXXX'
 """
 
+MINIMAL_PAPERTRAIL_LINK_TEMPLATE = (
+    'https://papertrailapp.com/events?focus={papertrail_id}'
+)
+"""
+    A template for linking directly to papertrail, when we don't have an instance id
+
+    Caller must provide:
+    - the papertrail id to highlight on. example: '926890000000000000'
+"""
+
 
 app = Chalice(app_name='lambda-traceback-redirect-response')
 app.debug = False
@@ -58,9 +68,8 @@ def traceback(papertrail_id):
         date_, instance_id = __get_traceback_metadata(papertrail_id)
     except Exception:
         print('failed to get data from elasticsearch, just sending to papertrail')
-        url = PAPERTRAIL_LINK_TEMPLATE.format(
+        url = MINIMAL_PAPERTRAIL_LINK_TEMPLATE.format(
             papertrail_id=papertrail_id,
-            instance_id=instance_id,
         )
     else:
         thirty_days_ago = datetime.date.today() - datetime.timedelta(days=30)
@@ -76,6 +85,8 @@ def traceback(papertrail_id):
                 papertrail_id=papertrail_id,
                 instance_id=instance_id,
             )
+
+    print('redirect url: $s' % url)
 
     return Response(
         status_code=302,
