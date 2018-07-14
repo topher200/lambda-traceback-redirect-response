@@ -86,7 +86,7 @@ def traceback(papertrail_id):
                 instance_id=instance_id,
             )
 
-    print('redirect url: $s' % url)
+    print('redirect url: %s' % url)
 
     return Response(
         status_code=302,
