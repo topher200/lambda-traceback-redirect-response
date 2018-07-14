@@ -11,13 +11,14 @@
 """
 
 import datetime
+import os
 
 import requests
 
 from chalice import Chalice, Response
 
 
-ES_ADDRESS = 'https://stats-from-logs.wordstream-sandbox.com'
+ES_ADDRESS = os.getenv('ES_ADDRESS')
 
 GET_TRACEBACK_FROM_ES_TEMPALTE = '{es_address}/traceback-index/traceback/{papertrail_id}'
 
